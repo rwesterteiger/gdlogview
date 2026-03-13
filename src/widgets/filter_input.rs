@@ -27,7 +27,7 @@ impl<'a> FilterInput<'a> {
 impl<'a> Widget for FilterInput<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let border_style = if self.focused {
-            Style::default().fg(Color::Yellow)
+            Style::default().fg(Color::Red)
         } else {
             Style::default().fg(Color::DarkGray)
         };
