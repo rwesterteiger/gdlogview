@@ -1,12 +1,15 @@
 use crate::log_entry::LogLevel;
 use crate::model::{Filters, TableModel};
 use crate::scroll::ScrollState;
+use std::fmt::Write as FmtWrite;
+use std::fs;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Focus {
     Table,
     LoggerFilter,
     MessageFilter,
+    SavePrompt,
 }
 
 pub struct App {
@@ -15,6 +18,8 @@ pub struct App {
     pub filters: Filters,
     pub focus: Focus,
     pub filename: String,
+    pub save_prompt: String,
+    pub save_status: Option<String>,
 }
 
 impl App {
@@ -25,6 +30,8 @@ impl App {
             filters: Filters::new(),
             focus: Focus::Table,
             filename,
+            save_prompt: String::new(),
+            save_status: None,
         }
     }
 
@@ -89,6 +96,22 @@ impl App {
             self.filters.min_level = levels[(pos + 1) % levels.len()];
             self.apply_filters();
         }
+    }
+
+    pub fn save_visible(&mut self, path: &str) {
+        let mut out = String::new();
+        for &idx in &self.model.filtered_indices {
+            let entry = &self.model.all_entries[idx];
+            let _ = FmtWrite::write_str(&mut out, &entry.text);
+            let _ = FmtWrite::write_char(&mut out, '\n');
+            if entry.is_multiline() {
+                let _ = FmtWrite::write_char(&mut out, '\n');
+            }
+        }
+        self.save_status = Some(match fs::write(path, &out) {
+            Ok(()) => format!("Saved {} entries to {}", self.model.filtered_indices.len(), path),
+            Err(e) => format!("Error: {}", e),
+        });
     }
 
     fn clamp_scroll(&mut self) {
