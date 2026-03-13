@@ -2,7 +2,7 @@ use crate::app::{App, Focus};
 use crate::widgets::filter_input::FilterInput;
 use crate::widgets::log_table::LogTable;
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
     widgets::Paragraph,
@@ -12,19 +12,30 @@ use ratatui::{
 pub fn draw(f: &mut Frame, app: &mut App) {
     let size = f.area();
 
-    // Layout: filter bar (3 lines) | table | help bar (1 line)
+    // Layout: title (1 line) | filter bar (3 lines) | table | help bar (1 line)
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
+            Constraint::Length(1), // title
             Constraint::Length(3), // filters
-            Constraint::Min(5),   // table
+            Constraint::Min(5),    // table
             Constraint::Length(1), // help
         ])
         .split(size);
 
-    draw_filters(f, app, chunks[0]);
-    draw_table(f, app, chunks[1]);
-    draw_help(f, app, chunks[2]);
+    draw_title(f, app, chunks[0]);
+    draw_filters(f, app, chunks[1]);
+    draw_table(f, app, chunks[2]);
+    draw_help(f, app, chunks[3]);
+}
+
+fn draw_title(f: &mut Frame, app: &App, area: Rect) {
+    let title = Paragraph::new(Line::from(vec![Span::styled(
+        app.filename.as_str(),
+        Style::default().fg(Color::White),
+    )]))
+    .alignment(Alignment::Center);
+    f.render_widget(title, area);
 }
 
 fn draw_filters(f: &mut Frame, app: &App, area: Rect) {

@@ -13,15 +13,17 @@ pub struct App {
     pub scroll: ScrollState,
     pub filters: Filters,
     pub focus: Focus,
+    pub filename: String,
 }
 
 impl App {
-    pub fn new(model: TableModel) -> Self {
+    pub fn new(model: TableModel, filename: String) -> Self {
         App {
             model,
             scroll: ScrollState::new(),
             filters: Filters::new(),
             focus: Focus::Table,
+            filename,
         }
     }
 

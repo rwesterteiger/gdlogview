@@ -7,6 +7,7 @@ mod ui;
 mod widgets;
 
 use std::io;
+use std::path::{Path, PathBuf};
 use app::App;
 use clap::Parser;
 use crossterm::{
@@ -23,9 +24,35 @@ struct Cli {
     file: String,
 }
 
+fn most_recent_file(dir: &Path) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let mut best: Option<(PathBuf, std::time::SystemTime)> = None;
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let meta = entry.metadata()?;
+        if !meta.is_file() {
+            continue;
+        }
+        let modified = meta.modified()?;
+        if best.as_ref().map_or(true, |(_, t)| modified > *t) {
+            best = Some((entry.path(), modified));
+        }
+    }
+    best.map(|(p, _)| p).ok_or_else(|| "directory is empty".into())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
-    let entries = log_entry::load_from_file(&cli.file)?;
+    let input_path = Path::new(&cli.file);
+    let resolved = if input_path.is_dir() {
+        most_recent_file(input_path)?
+    } else {
+        input_path.to_path_buf()
+    };
+    let filename = resolved
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| cli.file.clone());
+    let entries = log_entry::load_from_file(&resolved)?;
 
     // Setup terminal
     enable_raw_mode()?;
@@ -34,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::new(model::TableModel::new(entries));
+    let mut app = App::new(model::TableModel::new(entries), filename);
     let res = run_app(&mut terminal, &mut app);
 
     // Restore terminal
