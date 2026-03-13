@@ -16,12 +16,6 @@ Or directly:
 cargo run -- path/to/logfile.ndjson
 ```
 
-A sample file is included:
-
-```bash
-cargo run -- sample.ndjson
-```
-
 ## Features
 
 - **Table view** with columns: Time, Level (color-coded), Logger, Message
