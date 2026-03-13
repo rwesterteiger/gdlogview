@@ -7,7 +7,6 @@ pub enum Focus {
     Table,
     LoggerFilter,
     MessageFilter,
-    LevelFilter,
 }
 
 pub struct App {
@@ -84,23 +83,11 @@ impl App {
         self.clamp_scroll();
     }
 
-    pub fn level_up(&mut self) {
+    pub fn cycle_level(&mut self) {
         let levels = LogLevel::all();
         if let Some(pos) = levels.iter().position(|&l| l == self.filters.min_level) {
-            if pos + 1 < levels.len() {
-                self.filters.min_level = levels[pos + 1];
-                self.apply_filters();
-            }
-        }
-    }
-
-    pub fn level_down(&mut self) {
-        let levels = LogLevel::all();
-        if let Some(pos) = levels.iter().position(|&l| l == self.filters.min_level) {
-            if pos > 0 {
-                self.filters.min_level = levels[pos - 1];
-                self.apply_filters();
-            }
+            self.filters.min_level = levels[(pos + 1) % levels.len()];
+            self.apply_filters();
         }
     }
 
