@@ -43,9 +43,9 @@ fn draw_filters(f: &mut Frame, app: &App, area: Rect) {
     let filter_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(40),
-            Constraint::Percentage(40),
-            Constraint::Percentage(20),
+            Constraint::Length(30),
+            Constraint::Min(30),
+            Constraint::Length(35),
         ])
         .split(area);
 
@@ -55,7 +55,10 @@ fn draw_filters(f: &mut Frame, app: &App, area: Rect) {
         focused: app.focus == Focus::LoggerFilter,
     };
     if logger.focused {
-        f.set_cursor_position((logger.cursor_x(filter_chunks[0]), logger.cursor_y(filter_chunks[0])));
+        f.set_cursor_position((
+            logger.cursor_x(filter_chunks[0]),
+            logger.cursor_y(filter_chunks[0]),
+        ));
     }
     f.render_widget(logger, filter_chunks[0]);
 
@@ -65,11 +68,16 @@ fn draw_filters(f: &mut Frame, app: &App, area: Rect) {
         focused: app.focus == Focus::MessageFilter,
     };
     if message.focused {
-        f.set_cursor_position((message.cursor_x(filter_chunks[1]), message.cursor_y(filter_chunks[1])));
+        f.set_cursor_position((
+            message.cursor_x(filter_chunks[1]),
+            message.cursor_y(filter_chunks[1]),
+        ));
     }
     f.render_widget(message, filter_chunks[1]);
 
-    let level = LevelSelect { level: app.filters.min_level };
+    let level = LevelSelect {
+        level: app.filters.min_level,
+    };
     f.render_widget(level, filter_chunks[2]);
 }
 
@@ -107,9 +115,16 @@ fn draw_help(f: &mut Frame, app: &App, area: Rect) {
                     Focus::SavePrompt => unreachable!(),
                 }
             };
-            let color = if app.save_status.is_some() { Color::Green } else { Color::DarkGray };
+            let color = if app.save_status.is_some() {
+                Color::Green
+            } else {
+                Color::DarkGray
+            };
             f.render_widget(
-                Paragraph::new(Line::from(vec![Span::styled(help_text, Style::default().fg(color))])),
+                Paragraph::new(Line::from(vec![Span::styled(
+                    help_text,
+                    Style::default().fg(color),
+                )])),
                 area,
             );
         }
