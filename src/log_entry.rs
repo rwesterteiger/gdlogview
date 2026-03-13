@@ -1,3 +1,4 @@
+use chrono::NaiveTime;
 use serde::{Deserialize, Deserializer};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -48,6 +49,9 @@ pub struct LogEntry {
     pub level: LogLevel,
     pub logger: String,
     pub text: String,
+    /// Delta from the first entry's timestamp, formatted as "+S.mmm". Empty if unparseable.
+    #[serde(skip)]
+    pub delta: String,
 }
 
 impl LogEntry {
@@ -72,6 +76,18 @@ impl LogEntry {
     }
 }
 
+fn parse_time(s: &str) -> Option<NaiveTime> {
+    NaiveTime::parse_from_str(s, "%H:%M:%S%.3f").ok()
+}
+
+fn format_delta(ms: i64) -> String {
+    let sign = if ms < 0 { "-" } else { "+" };
+    let ms = ms.unsigned_abs();
+    let secs = ms / 1000;
+    let millis = ms % 1000;
+    format!("{}{}.{:03}", sign, secs, millis)
+}
+
 pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<LogEntry>, Box<dyn std::error::Error>> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
@@ -93,6 +109,17 @@ pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<LogEntry>, Box<dyn 
             }
             Err(e) => {
                 eprintln!("Warning: skipping line {}: {e}", i + 1);
+            }
+        }
+    }
+
+    // Compute deltas relative to the first parseable timestamp.
+    let origin = entries.iter().find_map(|e| parse_time(&e.time));
+    if let Some(origin) = origin {
+        for entry in &mut entries {
+            if let Some(t) = parse_time(&entry.time) {
+                let delta_ms = (t - origin).num_milliseconds();
+                entry.delta = format_delta(delta_ms);
             }
         }
     }

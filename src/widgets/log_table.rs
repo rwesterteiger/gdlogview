@@ -44,6 +44,14 @@ fn build_expanded_row<'a>(
         s
     };
 
+    let delta_text: String = {
+        let mut s = entry.delta.clone();
+        for _ in 1..lines.len() {
+            s.push_str("\n ");
+        }
+        s
+    };
+
     let level_text: String = {
         let mut s = format!("{:<5}", entry.level.as_str());
         for _ in 1..lines.len() {
@@ -74,6 +82,7 @@ fn build_expanded_row<'a>(
 
     Row::new(vec![
         Cell::from(time_text),
+        Cell::from(Span::styled(delta_text, Style::default().fg(Color::DarkGray))),
         Cell::from(Span::styled(level_text, Style::default().fg(level_col))),
         Cell::from(logger_text),
         Cell::from(msg_text),
@@ -154,6 +163,10 @@ impl<'a> StatefulWidget for LogTable<'a> {
                     Row::new(vec![
                         Cell::from(entry.time.clone()),
                         Cell::from(Span::styled(
+                            entry.delta.clone(),
+                            Style::default().fg(Color::DarkGray),
+                        )),
+                        Cell::from(Span::styled(
                             format!("{:<5}", entry.level.as_str()),
                             Style::default().fg(level_col),
                         )),
@@ -174,6 +187,7 @@ impl<'a> StatefulWidget for LogTable<'a> {
             .add_modifier(Modifier::BOLD);
         let header = Row::new(vec![
             Cell::from(Span::styled("Time", header_style)),
+            Cell::from(Span::styled("Delta", header_style)),
             Cell::from(Span::styled("Level", header_style)),
             Cell::from(Span::styled("Logger", header_style)),
             Cell::from(Span::styled("Message", header_style)),
@@ -182,7 +196,8 @@ impl<'a> StatefulWidget for LogTable<'a> {
         .style(Style::default().bg(Color::Rgb(40, 40, 60)));
 
         let widths = [
-            Constraint::Length(14),
+            Constraint::Length(13),
+            Constraint::Length(8),
             Constraint::Length(7),
             Constraint::Length(14),
             Constraint::Min(20),
