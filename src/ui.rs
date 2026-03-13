@@ -85,18 +85,33 @@ fn draw_table(f: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn draw_help(f: &mut Frame, app: &App, area: Rect) {
-    let help_text = match app.focus {
-        Focus::Table => {
-            " q:Quit  ↑↓/jk:Navigate  Space:Expand/Collapse  l:Logger filter  /:Message filter  v:Level filter  g/G:Top/Bottom  PgUp/PgDn"
+    match app.focus {
+        Focus::SavePrompt => {
+            let spans = vec![
+                Span::styled(" Save to: ", Style::default().fg(Color::Yellow)),
+                Span::styled(app.save_prompt.as_str(), Style::default().fg(Color::White)),
+                Span::styled("_", Style::default().fg(Color::Yellow)),
+                Span::styled("  Esc:Cancel", Style::default().fg(Color::DarkGray)),
+            ];
+            f.render_widget(Paragraph::new(Line::from(spans)), area);
+            let cursor_x = area.x + " Save to: ".len() as u16 + app.save_prompt.len() as u16;
+            f.set_cursor_position((cursor_x, area.y));
         }
-        Focus::LoggerFilter | Focus::MessageFilter => {
-            " Enter/Esc:Back to table  Tab:Switch filter"
+        _ => {
+            let help_text = if let Some(status) = &app.save_status {
+                status.as_str()
+            } else {
+                match app.focus {
+                    Focus::Table => " q:Quit  ↑↓/jk:Navigate  Space:Expand/Collapse  l:Logger filter  /:Message filter  v:Level filter  s:Save  g/G:Top/Bottom  PgUp/PgDn",
+                    Focus::LoggerFilter | Focus::MessageFilter => " Enter/Esc:Back to table  Tab:Switch filter",
+                    Focus::SavePrompt => unreachable!(),
+                }
+            };
+            let color = if app.save_status.is_some() { Color::Green } else { Color::DarkGray };
+            f.render_widget(
+                Paragraph::new(Line::from(vec![Span::styled(help_text, Style::default().fg(color))])),
+                area,
+            );
         }
-    };
-
-    let help = Paragraph::new(Line::from(vec![Span::styled(
-        help_text,
-        Style::default().fg(Color::DarkGray),
-    )]));
-    f.render_widget(help, area);
+    }
 }

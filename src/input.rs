@@ -7,6 +7,7 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
         Focus::Table => handle_table(app, key),
         Focus::LoggerFilter => handle_filter_logger(app, key),
         Focus::MessageFilter => handle_filter_message(app, key),
+        Focus::SavePrompt => handle_save_prompt(app, key),
     }
 }
 
@@ -23,6 +24,11 @@ fn handle_table(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Char('/') => app.focus = Focus::MessageFilter,
         KeyCode::Char('l') | KeyCode::Tab => app.focus = Focus::LoggerFilter,
         KeyCode::Char('v') => app.cycle_level(),
+        KeyCode::Char('s') => {
+            app.save_prompt.clear();
+            app.save_status = None;
+            app.focus = Focus::SavePrompt;
+        }
         _ => {}
     }
     false
@@ -45,6 +51,24 @@ fn handle_filter_message(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Tab => app.focus = Focus::LoggerFilter,
         KeyCode::Backspace => { app.filters.message.pop(); app.apply_filters(); }
         KeyCode::Char(c) => { app.filters.message.push(c); app.apply_filters(); }
+        _ => {}
+    }
+    false
+}
+
+fn handle_save_prompt(app: &mut App, key: KeyEvent) -> bool {
+    match key.code {
+        KeyCode::Esc => {
+            app.save_status = None;
+            app.focus = Focus::Table;
+        }
+        KeyCode::Enter => {
+            let path = app.save_prompt.clone();
+            app.save_visible(&path);
+            app.focus = Focus::Table;
+        }
+        KeyCode::Backspace => { app.save_prompt.pop(); }
+        KeyCode::Char(c) => { app.save_prompt.push(c); }
         _ => {}
     }
     false
