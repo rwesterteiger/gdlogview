@@ -28,10 +28,21 @@ impl App {
     }
 
     pub fn apply_filters(&mut self) {
+        // Remember which entry is currently selected so we can restore it.
+        let current_entry = self.model.filtered_indices.get(self.scroll.selected).copied();
+
         self.model.apply_filters(&self.filters);
+
         let len = self.model.filtered_indices.len();
         if len == 0 {
             self.scroll.selected = 0;
+        } else if let Some(entry_idx) = current_entry {
+            // If the previously selected entry still passes the filter, keep it selected.
+            if let Some(pos) = self.model.filtered_indices.iter().position(|&i| i == entry_idx) {
+                self.scroll.selected = pos;
+            } else if self.scroll.selected >= len {
+                self.scroll.selected = len - 1;
+            }
         } else if self.scroll.selected >= len {
             self.scroll.selected = len - 1;
         }
