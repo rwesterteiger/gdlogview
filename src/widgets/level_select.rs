@@ -2,28 +2,20 @@ use crate::log_entry::LogLevel;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
-/// A dropdown-style selector for the minimum log level filter.
 pub struct LevelSelect {
     pub level: LogLevel,
-    pub focused: bool,
 }
 
 impl Widget for LevelSelect {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let border_style = if self.focused {
-            Style::default().fg(Color::Yellow)
-        } else {
-            Style::default().fg(Color::DarkGray)
-        };
-
         let block = Block::default()
             .borders(Borders::ALL)
-            .border_style(border_style)
+            .border_style(Style::default().fg(Color::DarkGray))
             .title(" Min Level (v) ");
 
         let levels = LogLevel::all();
@@ -34,7 +26,7 @@ impl Widget for LevelSelect {
                 if l == self.level {
                     Span::styled(
                         format!("[{}]", label),
-                        Style::default().fg(level_color(l)).add_modifier(ratatui::style::Modifier::BOLD),
+                        Style::default().fg(level_color(l)).add_modifier(Modifier::BOLD),
                     )
                 } else {
                     Span::styled(

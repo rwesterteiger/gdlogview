@@ -69,10 +69,7 @@ fn draw_filters(f: &mut Frame, app: &App, area: Rect) {
     }
     f.render_widget(message, filter_chunks[1]);
 
-    let level = LevelSelect {
-        level: app.filters.min_level,
-        focused: app.focus == Focus::LevelFilter,
-    };
+    let level = LevelSelect { level: app.filters.min_level };
     f.render_widget(level, filter_chunks[2]);
 }
 
@@ -94,9 +91,6 @@ fn draw_help(f: &mut Frame, app: &App, area: Rect) {
         }
         Focus::LoggerFilter | Focus::MessageFilter => {
             " Enter/Esc:Back to table  Tab:Switch filter"
-        }
-        Focus::LevelFilter => {
-            " ←→/↑↓:Change level  Enter/Esc:Back to table  Tab:Switch filter"
         }
     };
 
