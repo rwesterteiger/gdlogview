@@ -2,6 +2,7 @@ use crate::app::{App, Focus};
 use crate::widgets::filter_input::FilterInput;
 use crate::widgets::level_select::LevelSelect;
 use crate::widgets::log_table::LogTable;
+use crate::widgets::timeline::Timeline;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
@@ -13,12 +14,13 @@ use ratatui::{
 pub fn draw(f: &mut Frame, app: &mut App) {
     let size = f.area();
 
-    // Layout: title (1 line) | filter bar (3 lines) | table | help bar (1 line)
+    // Layout: title (1 line) | filter bar (3 lines) | timeline (1 line) | table | help bar (1 line)
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1), // title
             Constraint::Length(3), // filters
+            Constraint::Length(3), // timeline
             Constraint::Min(5),    // table
             Constraint::Length(1), // help
         ])
@@ -26,8 +28,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     draw_title(f, app, chunks[0]);
     draw_filters(f, app, chunks[1]);
-    draw_table(f, app, chunks[2]);
-    draw_help(f, app, chunks[3]);
+    draw_timeline(f, app, chunks[2]);
+    draw_table(f, app, chunks[3]);
+    draw_help(f, app, chunks[4]);
 }
 
 fn draw_title(f: &mut Frame, app: &App, area: Rect) {
@@ -79,6 +82,15 @@ fn draw_filters(f: &mut Frame, app: &App, area: Rect) {
         level: app.filters.min_level,
     };
     f.render_widget(level, filter_chunks[2]);
+}
+
+fn draw_timeline(f: &mut Frame, app: &App, area: Rect) {
+    let widget = Timeline {
+        all_entries: &app.model.all_entries,
+        filtered_indices: &app.model.filtered_indices,
+        selected: app.scroll.selected,
+    };
+    f.render_widget(widget, area);
 }
 
 fn draw_table(f: &mut Frame, app: &mut App, area: Rect) {
