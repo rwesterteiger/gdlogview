@@ -1,5 +1,6 @@
 use crate::app::{App, Focus};
 use crate::widgets::filter_input::FilterInput;
+use crate::widgets::level_select::LevelSelect;
 use crate::widgets::log_table::LogTable;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -41,7 +42,11 @@ fn draw_title(f: &mut Frame, app: &App, area: Rect) {
 fn draw_filters(f: &mut Frame, app: &App, area: Rect) {
     let filter_chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .constraints([
+            Constraint::Percentage(40),
+            Constraint::Percentage(40),
+            Constraint::Percentage(20),
+        ])
         .split(area);
 
     let logger = FilterInput {
@@ -63,6 +68,12 @@ fn draw_filters(f: &mut Frame, app: &App, area: Rect) {
         f.set_cursor_position((message.cursor_x(filter_chunks[1]), message.cursor_y(filter_chunks[1])));
     }
     f.render_widget(message, filter_chunks[1]);
+
+    let level = LevelSelect {
+        level: app.filters.min_level,
+        focused: app.focus == Focus::LevelFilter,
+    };
+    f.render_widget(level, filter_chunks[2]);
 }
 
 fn draw_table(f: &mut Frame, app: &mut App, area: Rect) {
@@ -79,10 +90,13 @@ fn draw_table(f: &mut Frame, app: &mut App, area: Rect) {
 fn draw_help(f: &mut Frame, app: &App, area: Rect) {
     let help_text = match app.focus {
         Focus::Table => {
-            " q:Quit  ↑↓/jk:Navigate  Space:Expand/Collapse  l:Logger filter  /:Message filter  g/G:Top/Bottom  PgUp/PgDn"
+            " q:Quit  ↑↓/jk:Navigate  Space:Expand/Collapse  l:Logger filter  /:Message filter  v:Level filter  g/G:Top/Bottom  PgUp/PgDn"
         }
         Focus::LoggerFilter | Focus::MessageFilter => {
-            " Enter:Apply & return  Esc:Back to table  Tab:Switch filter"
+            " Enter/Esc:Back to table  Tab:Switch filter"
+        }
+        Focus::LevelFilter => {
+            " ←→/↑↓:Change level  Enter/Esc:Back to table  Tab:Switch filter"
         }
     };
 

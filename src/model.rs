@@ -1,14 +1,15 @@
-use crate::log_entry::LogEntry;
+use crate::log_entry::{LogEntry, LogLevel};
 use std::collections::HashSet;
 
 pub struct Filters {
     pub logger: String,
     pub message: String,
+    pub min_level: LogLevel,
 }
 
 impl Filters {
     pub fn new() -> Self {
-        Self { logger: String::new(), message: String::new() }
+        Self { logger: String::new(), message: String::new(), min_level: LogLevel::Trace }
     }
 }
 
@@ -39,7 +40,8 @@ impl TableModel {
                     || e.logger.to_lowercase().contains(&logger_lower);
                 let message_ok = message_lower.is_empty()
                     || e.text.to_lowercase().contains(&message_lower);
-                logger_ok && message_ok
+                let level_ok = e.level >= filters.min_level;
+                logger_ok && message_ok && level_ok
             })
             .map(|(i, _)| i)
             .collect();

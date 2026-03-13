@@ -7,6 +7,7 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
         Focus::Table => handle_table(app, key),
         Focus::LoggerFilter => handle_filter_logger(app, key),
         Focus::MessageFilter => handle_filter_message(app, key),
+        Focus::LevelFilter => handle_level_filter(app, key),
     }
 }
 
@@ -22,6 +23,7 @@ fn handle_table(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Char(' ') => app.toggle_expand(),
         KeyCode::Char('/') => app.focus = Focus::MessageFilter,
         KeyCode::Char('l') | KeyCode::Tab => app.focus = Focus::LoggerFilter,
+        KeyCode::Char('v') => app.focus = Focus::LevelFilter,
         _ => {}
     }
     false
@@ -41,9 +43,20 @@ fn handle_filter_logger(app: &mut App, key: KeyEvent) -> bool {
 fn handle_filter_message(app: &mut App, key: KeyEvent) -> bool {
     match key.code {
         KeyCode::Esc | KeyCode::Enter => app.focus = Focus::Table,
-        KeyCode::Tab => app.focus = Focus::LoggerFilter,
+        KeyCode::Tab => app.focus = Focus::LevelFilter,
         KeyCode::Backspace => { app.filters.message.pop(); app.apply_filters(); }
         KeyCode::Char(c) => { app.filters.message.push(c); app.apply_filters(); }
+        _ => {}
+    }
+    false
+}
+
+fn handle_level_filter(app: &mut App, key: KeyEvent) -> bool {
+    match key.code {
+        KeyCode::Esc | KeyCode::Enter => app.focus = Focus::Table,
+        KeyCode::Tab => app.focus = Focus::LoggerFilter,
+        KeyCode::Up | KeyCode::Right => app.level_up(),
+        KeyCode::Down | KeyCode::Left => app.level_down(),
         _ => {}
     }
     false

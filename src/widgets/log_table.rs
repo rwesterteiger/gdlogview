@@ -1,4 +1,4 @@
-use crate::log_entry::LogEntry;
+use crate::log_entry::{LogEntry, LogLevel};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
@@ -8,14 +8,13 @@ use ratatui::{
 };
 use std::collections::HashSet;
 
-fn level_color(level: &str) -> Color {
-    match level.to_uppercase().as_str() {
-        "ERROR" => Color::Red,
-        "WARN" | "WARNING" => Color::Yellow,
-        "INFO" => Color::Green,
-        "DEBUG" => Color::Cyan,
-        "TRACE" => Color::DarkGray,
-        _ => Color::White,
+fn level_color(level: LogLevel) -> Color {
+    match level {
+        LogLevel::Error => Color::Red,
+        LogLevel::Warn => Color::Yellow,
+        LogLevel::Info => Color::Green,
+        LogLevel::Debug => Color::Cyan,
+        LogLevel::Trace => Color::DarkGray,
     }
 }
 
@@ -46,7 +45,7 @@ fn build_expanded_row<'a>(
     };
 
     let level_text: String = {
-        let mut s = format!("{:<5}", entry.level);
+        let mut s = format!("{:<5}", entry.level.as_str());
         for _ in 1..lines.len() {
             s.push_str("\n     ");
         }
@@ -119,7 +118,7 @@ impl<'a> StatefulWidget for LogTable<'a> {
             let expanded = self.expanded.contains(&entry_idx);
             let is_selected = row_idx == self.selected;
 
-            let level_col = level_color(&entry.level);
+            let level_col = level_color(entry.level);
             let marker = multiline_marker(entry, expanded);
 
             let base_style = if is_selected {
@@ -155,7 +154,7 @@ impl<'a> StatefulWidget for LogTable<'a> {
                     Row::new(vec![
                         Cell::from(entry.time.clone()),
                         Cell::from(Span::styled(
-                            format!("{:<5}", entry.level),
+                            format!("{:<5}", entry.level.as_str()),
                             Style::default().fg(level_col),
                         )),
                         Cell::from(entry.logger.clone()),

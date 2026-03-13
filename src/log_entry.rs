@@ -1,12 +1,51 @@
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum LogLevel {
+    Trace,
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
+
+impl LogLevel {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            LogLevel::Trace => "TRACE",
+            LogLevel::Debug => "DEBUG",
+            LogLevel::Info => "INFO",
+            LogLevel::Warn => "WARN",
+            LogLevel::Error => "ERROR",
+        }
+    }
+
+    pub fn all() -> &'static [LogLevel] {
+        &[LogLevel::Trace, LogLevel::Debug, LogLevel::Info, LogLevel::Warn, LogLevel::Error]
+    }
+}
+
+impl<'de> Deserialize<'de> for LogLevel {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(d)?;
+        Ok(match s.to_uppercase().as_str() {
+            "TRACE" => LogLevel::Trace,
+            "DEBUG" => LogLevel::Debug,
+            "INFO" => LogLevel::Info,
+            "WARN" | "WARNING" => LogLevel::Warn,
+            "ERROR" => LogLevel::Error,
+            _ => LogLevel::Info,
+        })
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct LogEntry {
     pub time: String,
-    pub level: String,
+    pub level: LogLevel,
     pub logger: String,
     pub text: String,
 }

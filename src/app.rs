@@ -1,3 +1,4 @@
+use crate::log_entry::LogLevel;
 use crate::model::{Filters, TableModel};
 use crate::scroll::ScrollState;
 
@@ -6,6 +7,7 @@ pub enum Focus {
     Table,
     LoggerFilter,
     MessageFilter,
+    LevelFilter,
 }
 
 pub struct App {
@@ -80,6 +82,26 @@ impl App {
     pub fn page_up(&mut self) {
         self.scroll.page_up();
         self.clamp_scroll();
+    }
+
+    pub fn level_up(&mut self) {
+        let levels = LogLevel::all();
+        if let Some(pos) = levels.iter().position(|&l| l == self.filters.min_level) {
+            if pos + 1 < levels.len() {
+                self.filters.min_level = levels[pos + 1];
+                self.apply_filters();
+            }
+        }
+    }
+
+    pub fn level_down(&mut self) {
+        let levels = LogLevel::all();
+        if let Some(pos) = levels.iter().position(|&l| l == self.filters.min_level) {
+            if pos > 0 {
+                self.filters.min_level = levels[pos - 1];
+                self.apply_filters();
+            }
+        }
     }
 
     fn clamp_scroll(&mut self) {
