@@ -34,7 +34,6 @@ fn build_expanded_row<'a>(
     marker: &str,
     level_col: Color,
     base_style: Style,
-    _truncated: bool,
 ) -> Row<'a> {
     let time_text: String = {
         let mut s = entry.time.clone();
@@ -142,74 +141,84 @@ impl<'a> StatefulWidget for LogTable<'a> {
                 let lines = entry.lines();
                 let height = lines.len();
 
-                if visual_lines_used + height > table_height {
-                    let can_show = table_height - visual_lines_used;
-                    let row = build_expanded_row(entry, &lines[..can_show], marker, level_col, base_style, true);
-                    rows.push(row.height(can_show as u16));
-                    visual_lines_used += can_show;
-                } else {
-                    let row = build_expanded_row(entry, &lines, marker, level_col, base_style, false);
-                    rows.push(row.height(height as u16));
-                    visual_lines_used += height;
-                }
+                let can_show = if visual_lines_used + height > table_height { table_height - visual_lines_used } else { height };
+                
+                let row = build_expanded_row(entry, &lines[..can_show], marker, level_col, base_style);
+                rows.push(row.height(can_show as u16));
+                visual_lines_used += can_show;
             } else {
-                let text_display = if entry.is_multiline() {
-                    format!("{}{} ...", marker, entry.first_line())
-                } else {
-                    format!("{}{}", marker, entry.first_line())
-                };
+                let row = self
+                  .build_single_or_collapsed_row(entry)
+                  .style(base_style);
 
-                rows.push(
-                    Row::new(vec![
-                        Cell::from(entry.time.clone()),
-                        Cell::from(Span::styled(
-                            entry.format_delta(),
-                            Style::default().fg(Color::DarkGray),
-                        )),
-                        Cell::from(Span::styled(
-                            format!("{:<5}", entry.level.as_str()),
-                            Style::default().fg(level_col),
-                        )),
-                        Cell::from(entry.logger.clone()),
-                        Cell::from(text_display),
-                    ])
-                    .style(base_style)
-                    .height(1),
-                );
+                rows.push(row);
                 visual_lines_used += 1;
             }
 
             row_idx += 1;
         }
 
-        let header_style = Style::default()
+        Widget::render(self.make_table(block, rows), area, buf);
+    }
+}
+
+
+impl LogTable<'_> {
+
+  fn make_table<'a>(&self, block : Block<'a>, rows: Vec<Row<'a>>) -> Table<'a> {
+     let header_style = Style::default()
             .fg(Color::White)
             .add_modifier(Modifier::BOLD);
-        let header = Row::new(vec![
-            Cell::from(Span::styled("Time", header_style)),
-            Cell::from(Span::styled("Delta", header_style)),
-            Cell::from(Span::styled("Level", header_style)),
-            Cell::from(Span::styled("Logger", header_style)),
-            Cell::from(Span::styled("Message", header_style)),
-        ])
-        .height(1)
-        .style(Style::default().bg(Color::Rgb(40, 40, 60)));
+        
+      let header = Row::new(vec![
+          Cell::from(Span::styled("Time", header_style)),
+          Cell::from(Span::styled("Delta", header_style)),
+          Cell::from(Span::styled("Level", header_style)),
+          Cell::from(Span::styled("Logger", header_style)),
+          Cell::from(Span::styled("Message", header_style)),
+      ])
+      .height(1)
+      .style(Style::default().bg(Color::Rgb(40, 40, 60)));
 
-        let widths = [
-            Constraint::Length(13),
-            Constraint::Length(8),
-            Constraint::Length(7),
-            Constraint::Length(14),
-            Constraint::Min(20),
-        ];
+      let widths = [
+          Constraint::Length(13),
+          Constraint::Length(8),
+          Constraint::Length(7),
+          Constraint::Length(14),
+          Constraint::Min(20),
+      ];
 
-        Widget::render(
-            Table::new(rows, widths)
-                .header(header)
-                .block(block)
-                .column_spacing(1),
-            area,
-            buf,
-        );
-    }
+          Table::new(rows, widths)
+              .header(header)
+              .block(block)
+              .column_spacing(1)
+  }
+
+
+  fn build_single_or_collapsed_row(&self,  entry : &LogEntry) -> Row<'_> {
+    let level_col = level_color(entry.level);
+    
+    let marker = multiline_marker(entry, false);
+
+    let text_display = if entry.is_multiline() {
+        format!("{}{} ...", marker, entry.first_line())
+      } else {
+        format!("{}{}", marker, entry.first_line())
+      };
+
+      Row::new(vec![
+          Cell::from(entry.time.clone()),
+          Cell::from(Span::styled(
+              entry.format_delta(),
+              Style::default().fg(Color::DarkGray),
+          )),
+          Cell::from(Span::styled(
+              format!("{:<5}", entry.level.as_str()),
+              Style::default().fg(level_col),
+          )),
+          Cell::from(entry.logger.clone()),
+          Cell::from(text_display),
+      ])
+      .height(1)
+  }
 }
