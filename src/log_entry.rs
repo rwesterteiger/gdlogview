@@ -88,6 +88,11 @@ impl LogEntry {
     }
 }
 
+impl AsRef<LogEntry> for LogEntry {
+    fn as_ref(&self) -> &LogEntry {
+      self
+    }
+}
 fn parse_time(s: &str) -> Option<NaiveTime> {
     NaiveTime::parse_from_str(s, "%H:%M:%S%.3f").ok()
 }
