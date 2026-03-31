@@ -45,7 +45,7 @@ fn build_expanded_row<'a>(
     };
 
     let delta_text: String = {
-        let mut s = entry.delta.clone();
+        let mut s = entry.format_delta();
         for _ in 1..lines.len() {
             s.push_str("\n ");
         }
@@ -163,7 +163,7 @@ impl<'a> StatefulWidget for LogTable<'a> {
                     Row::new(vec![
                         Cell::from(entry.time.clone()),
                         Cell::from(Span::styled(
-                            entry.delta.clone(),
+                            entry.format_delta(),
                             Style::default().fg(Color::DarkGray),
                         )),
                         Cell::from(Span::styled(

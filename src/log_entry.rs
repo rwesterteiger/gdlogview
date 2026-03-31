@@ -1,4 +1,4 @@
-use chrono::NaiveTime;
+use chrono::{Duration, NaiveTime};
 use serde::{Deserialize, Deserializer};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -49,9 +49,9 @@ pub struct LogEntry {
     pub level: LogLevel,
     pub logger: String,
     pub text: String,
-    /// Delta from the first entry's timestamp, formatted as "+S.mmm". Empty if unparseable.
+    /// Delta from the first entry's timestamp. `None` if the timestamp was unparseable.
     #[serde(skip)]
-    pub delta: String,
+    pub delta: Option<Duration>,
 }
 
 impl LogEntry {
@@ -74,18 +74,22 @@ impl LogEntry {
     pub fn lines(&self) -> Vec<&str> {
         self.text.lines().collect()
     }
+
+    /// Format delta with a leading `+`/`-` sign for display in the table column.
+    pub fn format_delta(&self) -> String {
+        let d = match self.delta {
+            None => return String::new(),
+            Some(d) => d,
+        };
+        let ms = d.num_milliseconds();
+        let sign = if ms < 0 { '-' } else { '+' };
+        let abs = ms.unsigned_abs();
+        format!("{}{}.{:03}", sign, abs / 1000, abs % 1000)
+    }
 }
 
 fn parse_time(s: &str) -> Option<NaiveTime> {
     NaiveTime::parse_from_str(s, "%H:%M:%S%.3f").ok()
-}
-
-fn format_delta(ms: i64) -> String {
-    let sign = if ms < 0 { "-" } else { "+" };
-    let ms = ms.unsigned_abs();
-    let secs = ms / 1000;
-    let millis = ms % 1000;
-    format!("{}{}.{:03}", sign, secs, millis)
 }
 
 pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<LogEntry>, Box<dyn std::error::Error>> {
@@ -118,8 +122,7 @@ pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<LogEntry>, Box<dyn 
     if let Some(origin) = origin {
         for entry in &mut entries {
             if let Some(t) = parse_time(&entry.time) {
-                let delta_ms = (t - origin).num_milliseconds();
-                entry.delta = format_delta(delta_ms);
+                entry.delta = Some(t - origin);
             }
         }
     }
