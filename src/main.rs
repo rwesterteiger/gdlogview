@@ -40,7 +40,22 @@ fn most_recent_file(dir: &Path) -> Result<PathBuf, Box<dyn std::error::Error>> {
     best.map(|(p, _)| p).ok_or_else(|| "directory is empty".into())
 }
 
+fn install_panic_hook() {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        // Best-effort terminal restore — ignore errors
+        let _ = crossterm::terminal::disable_raw_mode();
+        let _ = crossterm::execute!(
+            io::stdout(),
+            LeaveAlternateScreen,
+            DisableMouseCapture,
+        );
+        default_hook(info);
+    }));
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    install_panic_hook();
     let cli = Cli::parse();
     let input_path = Path::new(&cli.file);
     let resolved = if input_path.is_dir() {
